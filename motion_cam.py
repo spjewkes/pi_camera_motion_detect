@@ -70,11 +70,13 @@ class MotionDetect(object):
                         print('Motion detected!')
 
                         if not self.dryrun:
+                            timestamp = datetime.now().isoformat('_')
+
                             # As soon as we detect motion, split the recording to
                             # record the frames "after" motion
-                            camera.split_recording('{}_capture_{:04d}.h264'.format(datetime.now().isoformat('_'), count))
+                            camera.split_recording('{}_capture_{:04d}.h264'.format(timestamp, count))
                             # Write the 10 seconds "before" motion to disk as well
-                            stream.copy_to('{}_before_{:04d}.h264'.format(datetime.now().isoformat('_'), count), seconds=10)
+                            stream.copy_to('{}_before_{:04d}.h264'.format(timestamp, count), seconds=10)
 
                         stream.clear()
 
