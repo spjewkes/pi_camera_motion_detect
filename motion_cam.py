@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-import sys,os
+#!/usr/bin/env python3
+
+from datetime import datetime
 import io
 import numpy as np
 
@@ -26,12 +27,15 @@ def compare(img1, img2):
 
 def detect_motion(camera):
     global prior_image
+    global motion_enabled
+    
     stream = io.BytesIO()
     camera.capture(stream, format='jpeg', use_video_port=True)
     stream.seek(0)
+
     if prior_image is None:
         prior_image = Image.open(stream)
-        return False
+        motion_enabled = False
     else:
         current_image = Image.open(stream)
         # Compare current_image to prior_image to detect motion. This is
@@ -40,9 +44,12 @@ def detect_motion(camera):
         print(result)
         # Once motion detection is done, make the prior image the current
         prior_image = current_image
-        if result > 2000:
-            return True
-        return False
+        if not motion_enabled and result > 2000:
+            motion_enabled = True
+        elif motion_enabled and result < 1000:
+            motion_enabled = False
+
+    return motion_enabled
 
 def main():
     with PiCamera() as camera:
@@ -57,9 +64,9 @@ def main():
                     print('Motion detected!')
                     # As soon as we detect motion, split the recording to
                     # record the frames "after" motion
-                    camera.split_recording('after_{:04d}.h264'.format(count))
+                    camera.split_recording('{}_after_{:04d}.h264'.format(datetime.now().isoformat('_'), count))
                     # Write the 10 seconds "before" motion to disk as well
-                    stream.copy_to('before_{:04d}.h264'.format(count), seconds=10)
+                    stream.copy_to('{}_before_{:04d}.h264'.format(datetime.now().isoformat('_'), count), seconds=10)
                     stream.clear()
                     # Wait until motion is no longer detected, then split
                     # recording back to the in-memory circular buffer
